@@ -1,34 +1,34 @@
 pipeline {
-    agent {
-        kubernetes {
-            yaml '''
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    component: ci
-spec:
-  containers:
-  - name: python
-    image: python:3.7
-    command:
-    - cat
-    tty: true
-'''
-        }
-    }
+    agent any // Utilise l'environnement Jenkins Docker de base
 
     triggers {
-        pollSCM('*/1 * * * *')
+        pollSCM('*/1 * * * *') // Alerte Jenkins toutes les minutes en cas de push GitHub
     }
 
     stages {
-        stage('Test python') {
+        stage('Checkout Code') {
             steps {
-                container('python') {
-                    sh "pip install -r requirements.txt"
-                    sh "python test.py"
-                }
+                checkout scm // Étape 1 : Jenkins clone ton dépôt
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                echo 'Exécution des tests unitaires dans le conteneur...'
+                // On build temporairement l'image pour exécuter les tests à l'intérieur
+                sh "docker build -t flask_hello ."
+                // On lance les tests en écrasant la commande par défaut (Page 6 du TP)
+                sh "docker run --rm --name flask_hello flask_hello ./test.py --verbose"
+            }
+        }
+
+        stage('Push to Local Registry') {
+            steps {
+                echo 'Tag et Push de l\'image vers le registre local...'
+                # On tague l'image pour le registre local au port 4000 (Page 7 du TP)
+                sh "docker tag flask_hello localhost:4000/flask_hello"
+                # On pousse l'image dans le registre local
+                sh "docker push localhost:4000/flask_hello"
             }
         }
     }
