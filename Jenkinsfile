@@ -25,9 +25,7 @@ pipeline {
         stage('Push to Local Registry') {
             steps {
                 echo 'Tag et Push de l\'image vers le registre local...'
-                # On tague l'image pour le registre local au port 4000 (Page 7 du TP)
                 sh "docker tag flask_hello localhost:4000/flask_hello"
-                # On pousse l'image dans le registre local
                 sh "docker push localhost:4000/flask_hello"
             }
         }
